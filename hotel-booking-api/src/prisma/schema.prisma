@@ -1,0 +1,336 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  RECEPTION
+  CLIENT
+}
+
+enum RoomType {
+  SINGLE
+  DOUBLE
+  SUITE
+  DELUXE
+  PRESIDENTIAL
+}
+
+enum RoomState {
+  VACANT_CLEAN
+  VACANT_DIRTY
+  OCCUPIED
+  CLEANING
+  MAINTENANCE
+}
+
+enum MaintenanceState {
+  NONE
+  OUT_OF_ORDER
+  OUT_OF_SERVICE
+}
+
+enum InspectionState {
+  NOT_INSPECTED
+  INSPECTED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  EXPIRED
+  CHECKED_IN
+  
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+
+
+
+model User {
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  password        String?
+  googleId        String?  @unique
+  authProvider    String   @default("LOCAL")
+  role            Role     @default(CLIENT)
+
+  idDocument      String?
+  phone           String?
+  address         String?
+  province        String?
+  country         String?
+  isForeigner     Boolean? @default(false)
+
+  emailVerified   Boolean  @default(false)
+  isActive        Boolean  @default(true)
+
+  resetToken      String?
+  resetExpires    DateTime?
+
+  tokenVersion    Int      @default(0)
+
+  createdAt       DateTime @default(now())
+
+  reservations        Reservation[]
+  guestProfile        Guest?
+  ticketMessages  TicketMessage[]
+  createdGuests       Guest[] @relation("GuestCreatedBy")
+  createdReservations Reservation[] @relation("ReservationCreatedBy")
+  tickets             Ticket[] @relation("TicketUser")
+  assignedTickets     Ticket[] @relation("TicketAssignee")
+  profileCompleted Boolean @default(false)
+}
+
+model Guest {
+  id              String   @id @default(uuid())
+
+  userId          String?  @unique
+  user            User?    @relation(fields: [userId], references: [id])
+
+  name            String
+  email           String?
+  phone           String?
+  idDocument      String?
+  province        String?
+  country         String?
+  isForeigner     Boolean  @default(false)
+  verifiedByStaff Boolean  @default(false)
+
+  createdById     String?
+  createdBy       User?    @relation("GuestCreatedBy", fields: [createdById], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  reservations    Reservation[]
+  tickets         Ticket[]
+
+  @@index([email])
+  @@index([idDocument])
+}
+
+model Room {
+  id              String @id @default(uuid())
+
+  number          String @unique
+  type            RoomType
+
+  title           String
+  description     String?
+
+  pricePerNight   Float
+  capacity        Int
+  floor           Int?
+
+  imageUrl        String?
+
+  state           RoomState @default(VACANT_CLEAN)
+  maintenance     MaintenanceState @default(NONE)
+  inspection      InspectionState @default(NOT_INSPECTED)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  amenities       Amenity[]
+  reservations    Reservation[]
+}
+
+model Reservation {
+  id            String @id @default(uuid())
+
+  // Opcional: utilizador que fez a reserva online
+  userId        String?
+
+  // Obrigatório: toda reserva pertence a um hóspede
+  guestId       String
+
+  roomId        String
+
+  user          User? @relation(fields: [userId], references: [id])
+  guest         Guest @relation(fields: [guestId], references: [id])
+  room          Room @relation(fields: [roomId], references: [id])
+
+  checkIn       DateTime
+  checkOut      DateTime
+
+  checkInReal   DateTime?
+  checkOutReal  DateTime?
+
+  totalPrice    Float
+
+  amountPaid    Float?
+  refundAmount  Float?
+  extraCharge   Float?
+
+  earlyCheckoutReason String?
+
+  // Controlo da taxa de late checkout (acrescida a cada 60 min após 12h00 + tolerância)
+  lateFeeAmount  Float?    @default(0)
+  lateFeePaid    Float?    @default(0)
+  lateFeeConfirmed Boolean @default(true)
+  lastLateFeeAt  DateTime?
+
+  status        ReservationStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+
+  paymentMethod   String?
+  paymentProofUrl String?
+
+  expiresAt     DateTime?
+
+  cancellationReason String?
+  cancellationFee    Float?
+
+  // Reservas vindas de Booking, Airbnb, etc.
+  externalPlatform      String?
+  externalReservationId String?
+
+ createdById String?
+
+createdBy User? @relation("ReservationCreatedBy", fields: [createdById], references: [id])
+  
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tickets       Ticket[]
+
+  @@index([guestId])
+  @@index([roomId, checkIn, checkOut])
+  @@index([status, paymentStatus])
+}
+
+model Amenity {
+  id        String @id @default(uuid())
+  name      String @unique
+
+  rooms     Room[]
+
+  createdAt DateTime @default(now())
+}
+
+model Ticket {
+  id              String       @id @default(uuid())
+  code            String?      @unique
+  type            TicketType   @default(COMPLAINT)
+  status          TicketStatus @default(OPEN)
+  priority        TicketPriority @default(MEDIUM)
+
+  subject         String
+  message         String
+  response        String?
+
+  userId          String?
+  user            User?        @relation("TicketUser", fields: [userId], references: [id])
+
+  guestId         String?
+  guest           Guest?       @relation(fields: [guestId], references: [id])
+
+  reservationId   String?
+  reservation     Reservation? @relation(fields: [reservationId], references: [id])
+
+  assignedToId    String?
+  assignedTo      User?        @relation("TicketAssignee", fields: [assignedToId], references: [id])
+
+  requestedCheckIn  DateTime?
+  requestedCheckOut DateTime?
+  requestedRoomId   String?
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  messages        TicketMessage[]
+  @@index([status, type])
+}
+
+
+model TicketMessage {
+  id          String   @id @default(uuid())
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  message     String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  isStaff     Boolean  @default(false)
+  attachments Json?    // Para URLs de anexos futuros
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ticketId])
+  @@index([createdAt])
+}
+
+// Enums
+enum TicketType {
+  COMPLAINT
+  REQUEST
+  INFO
+  SUPPORT
+  RESCHEDULE
+  CANCELLATION
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CLIENT
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model HotelPolicy {
+  id                         String   @id @default("default")
+  paymentHoldMinutes         Int      @default(15)
+  cancellationFeePercent     Float    @default(10)
+  minCancellationFee         Float    @default(2000)
+  lateCheckoutGraceMinutes   Int      @default(60)
+  lateCheckoutHourlyFee      Float    @default(2000)
+  earlyCheckoutRefundPercent Float    @default(0)
+  updatedAt                  DateTime @updatedAt
+}
+
+model ChannelSyncLog {
+  id          String   @id @default(uuid())
+  platform    String
+  action      String
+  status      String
+  message     String?
+  payload     Json?
+  createdAt   DateTime @default(now())
+
+  @@index([platform, action])
+}
+
+
+model RoomChannelMapping {
+  id         String @id @default(uuid())
+  roomId     String
+  channel    String
+  externalId String
+
+  createdAt  DateTime @default(now())
+}

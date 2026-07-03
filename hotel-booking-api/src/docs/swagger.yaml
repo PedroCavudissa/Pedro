@@ -1,0 +1,1200 @@
+openapi: 3.0.0
+
+info:
+  title: Hotel Booking API
+  version: 1.0.0
+  description: API de gestão de reservas de hotel (Pedro Cavudissa)
+
+servers:
+  - url: http://localhost:9090
+
+tags:
+  - name: Authentication
+  - name: Users
+  - name: Rooms
+  - name: Amenities
+  - name: Reservations
+  - name: Static Files
+  - name: Policies
+  - name: Reports
+  - name: Tickets
+  - name: Tickets - Admin
+  - name: Integrations
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
+
+paths:
+
+  # =============================================================
+  # AUTH
+  # =============================================================
+      
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Registar utilizador
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        201:
+          description: Utilizador criado
+
+  /auth/google:
+    post:
+      summary: Login com conta Google
+      description: Autentica um utilizador usando o token ID do Google (Identity Services)
+      tags:
+        - Autenticação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: ID Token retornado pelo Google Identity Services
+                  example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+      responses:
+        200:
+          description: Login bem-sucedido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      email:
+                        type: string
+                      role:
+                        type: string
+                        enum: [CLIENT, RECEPTION, MANAGER, ADMIN]
+                  token:
+                    type: string
+                    description: JWT token para autenticação
+      400:
+        description: Token não fornecido
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: "Token do Google é obrigatório"
+      401:
+        description: Falha na autenticação
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: "Token do Google inválido ou expirado"
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        200:
+          description: Login OK
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout do utilizador
+      responses:
+        200:
+          description: Logout OK
+
+  /auth/verify-email:
+    get:
+      tags: [Authentication]
+      summary: Verificar email
+      security: []
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Email verificado
+
+  /auth/change-password:
+    post:
+      tags: [Authentication]
+      summary: Alterar password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword: { type: string }
+      responses:
+        200:
+          description: Password alterada
+
+  /auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Recuperar password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string }
+      responses:
+        200:
+          description: Email enviado
+
+  /auth/reset-password/confirm:
+    get:
+      tags: [Authentication]
+      summary: Página reset password
+      security: []
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: HTML page
+    post:
+      tags: [Authentication]
+      summary: Confirmar reset password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string }
+      responses:
+        200:
+          description: Password redefinida
+
+  /auth/resend-verification:
+    post:
+      tags: [Authentication]
+      summary: Reenviar verificação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string }
+      responses:
+        200:
+          description: Email reenviado
+
+  /auth/resend-reset-password:
+    post:
+      tags: [Authentication]
+      summary: Reenviar reset password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string }
+      responses:
+        200:
+          description: Reset reenviado
+
+  /auth/disable/{id}:
+    patch:
+      tags: [Authentication]
+      summary: Desativar utilizador
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Conta desativada
+
+  /auth/activate/{id}:
+    patch:
+      tags: [Authentication]
+      summary: Ativar utilizador
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Conta ativada
+
+
+  # =============================================================
+  # USERS
+  # =============================================================
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Listar utilizadores
+      responses:
+        200:
+          description: Lista retornada com sucesso
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Utilizador atual
+      responses:
+        200:
+          description: OK
+    patch:
+      tags: [Users]
+      summary: Atualizar utilizador atual
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string }
+      responses:
+        200:
+          description: Perfil atualizado com sucesso
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Buscar utilizador por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: OK
+    delete:
+      tags: [Users]
+      summary: Apagar utilizador
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Apagado
+
+
+  # =============================================================
+  # ROOMS
+  # =============================================================
+
+  /rooms:
+    get:
+      tags: [Rooms]
+      summary: Listar quartos
+      description: Retorna uma lista de quartos, permitindo filtrar pelo tipo de quarto.
+      parameters:
+        - in: query
+          name: type
+          required: false
+          description: Filtrar os quartos por uma categoria específica
+          schema:
+            type: string
+            enum: [SINGLE, DOUBLE, SUITE, DELUXE, PRESIDENTIAL]
+      responses:
+        200:
+          description: Lista de quartos retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    number:
+                      type: string
+                    type:
+                      type: string
+                    pricePerNight:
+                      type: number
+    post:
+      tags: [Rooms]
+      summary: Criar quarto com imagem
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [number, type, title, pricePerNight, capacity]
+              properties:
+                number:
+                  type: string
+                type:
+                  type: string
+                  enum: [SINGLE, DOUBLE, SUITE, DELUXE, PRESIDENTIAL]
+                title:
+                  type: string
+                description:
+                  type: string
+                pricePerNight:
+                  type: number
+                capacity:
+                  type: integer
+                floor:
+                  type: integer
+                image:
+                  type: string
+                  format: binary
+                amenityIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        201:
+          description: Quarto criado com sucesso
+
+  /rooms/{id}:
+    delete:
+      tags: [Rooms]
+      summary: Eliminar quarto
+      description: Elimina um quarto do sistema. Rota protegida (Apenas ADMIN).
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Quarto eliminado com sucesso
+        401:
+          description: Não autenticado
+        403:
+          description: Não autorizado (Apenas ADMIN)
+        404:
+          description: Quarto não encontrado
+
+
+  # =============================================================
+  # ROOMS - CLEANING / INSPECTION / MAINTENANCE
+  # =============================================================
+
+  /rooms/{id}/cleaning/start:
+    patch:
+      tags: [Rooms]
+      summary: Iniciar limpeza do quarto
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Limpeza iniciada
+
+  /rooms/{id}/cleaning/finish:
+    patch:
+      tags: [Rooms]
+      summary: Finalizar limpeza do quarto
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Limpeza finalizada
+
+  /rooms/{id}/inspect:
+    patch:
+      tags: [Rooms]
+      summary: Marcar quarto como inspecionado
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Quarto inspecionado
+
+  /rooms/{id}/maintenance/start:
+    patch:
+      tags: [Rooms]
+      summary: Iniciar manutenção (OOO ou OOS)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  type: string
+                  enum: [OUT_OF_ORDER, OUT_OF_SERVICE]
+      responses:
+        200:
+          description: Manutenção iniciada
+
+  /rooms/{id}/maintenance/finish:
+    patch:
+      tags: [Rooms]
+      summary: Finalizar manutenção
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Manutenção finalizada
+
+
+  # =============================================================
+  # AMENITIES
+  # =============================================================
+
+  /amenities:
+    get:
+      tags: [Amenities]
+      summary: Listar amenities
+      responses:
+        200:
+          description: OK
+    post:
+      tags: [Amenities]
+      summary: Criar amenity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        201:
+          description: Criado
+
+  /amenities/{id}:
+    patch:
+      tags: [Amenities]
+      summary: Atualizar amenity
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        200:
+          description: Atualizado
+    delete:
+      tags: [Amenities]
+      summary: Eliminar amenity
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Removido
+
+
+  # =============================================================
+  # RESERVATIONS
+  # =============================================================
+
+  /reservations:
+    get:
+      tags: [Reservations]
+      summary: Listar reservas
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+    post:
+      tags: [Reservations]
+      summary: Criar reserva (HOLD de pagamento dinâmico via política)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [roomId, checkIn, checkOut]
+              properties:
+                roomId:
+                  type: string
+                  description: ID único do quarto (UUID)
+                checkIn:
+                  type: string
+                  format: date-time
+                  description: Data e hora de entrada planeada
+                checkOut:
+                  type: string
+                  format: date-time
+                  description: Data e hora de saída planeada
+                userId:
+                  type: string
+                  description: Opcional. Passado pela receção para associar a conta de utilizador.
+                guest:
+                  type: object
+                  required: [idDocument, country]
+                  description: Dados complementares do hóspede coletados no ato.
+                  properties:
+                    name:
+                      type: string
+                      description: Obrigatório para Walk-In/Balcão.
+                    email:
+                      type: string
+                      format: email
+                    phone:
+                      type: string
+                    idDocument:
+                      type: string
+                      description: Número do BI ou Passaporte.
+                    province:
+                      type: string
+                    country:
+                      type: string
+                    isForeigner:
+                      type: boolean
+      responses:
+        201:
+          description: Reserva criada com sucesso
+        400:
+          description: Dados de entrada inválidos
+        409:
+          description: Quarto indisponível nas datas selecionadas
+
+  /reservations/mine:
+    get:
+      tags: [Reservations]
+      summary: Listar minhas reservas
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Lista de reservas do utilizador retornada com sucesso
+
+  /reservations/{id}:
+    get:
+      tags: [Reservations]
+      summary: Buscar reserva por ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+    put:
+      tags: [Reservations]
+      summary: Atualizar reserva
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                checkIn:
+                  type: string
+                  format: date-time
+                checkOut:
+                  type: string
+                  format: date-time
+                status:
+                  type: string
+      responses:
+        200:
+          description: Atualizado
+    delete:
+      tags: [Reservations]
+      summary: Cancelar reserva
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Cancelado
+
+  /reservations/{id}/pay:
+    patch:
+      tags: [Reservations]
+      summary: Confirmar pagamento (recepção)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [method]
+              properties:
+                method:
+                  type: string
+                  enum: [CASH, CARD, TRANSFER]
+      responses:
+        200:
+          description: Pagamento confirmado
+
+  /reservations/{id}/checkin:
+    patch:
+      tags: [Reservations]
+      summary: Fazer check-in do cliente
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Check-in realizado com sucesso
+
+  /reservations/{id}/checkout:
+    patch:
+      tags: [Reservations]
+      summary: Fazer check-out do cliente
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Check-out realizado com sucesso
+
+  /reservations/{id}/payment-proof:
+    post:
+      tags: [Reservations]
+      summary: Carregar comprovativo de pagamento (Hóspede)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [proof]
+              properties:
+                proof:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Comprovativo carregado com sucesso
+  /reservations/{id}/cancel:
+   patch:
+      tags: [Reservations]
+      summary: Cancelar reserva (Hóspede)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Motivo do cancelamento (opcional)
+      responses:
+        200:
+          description: Reserva cancelada com sucesso
+  /reservations/{id}/reschedule:
+    patch:
+      tags: [Reservations]
+      summary: Reagendar reserva (Hóspede)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [checkIn, checkOut]
+              properties:
+                checkIn:
+                  type: string
+                  format: date-time
+                checkOut:
+                  type: string
+                  format: date-time
+      responses:
+        200:
+          description: Reserva reagendada com sucesso
+  /reservations/{id}/change-room:
+    patch:
+      tags: [Reservations]
+      summary: Alterar quarto da reserva (Hóspede)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newRoomId]
+              properties:
+                newRoomId:
+                  type: string
+                  description: ID do novo quarto (UUID)
+      responses:
+        200:
+          description: Quarto alterado com sucesso
+
+
+  # =============================================================
+  # POLICIES
+  # =============================================================
+
+  /policies:
+    get:
+      tags: [Policies]
+      summary: Listar políticas do hotel
+      responses:
+        200:
+          description: Lista de políticas retornada com sucesso
+    post:
+      tags: [Policies]
+      summary: Criar nova política
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, description]
+              properties:
+                title: { type: string }
+                description: { type: string }
+      responses:
+        201:
+          description: Política criada
+    patch:
+      tags: [Policies]
+      summary: Atualizar políticas do hotel
+      requestBody:  
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                checkInTime:
+                  type: string
+                  description: Hora de check-in
+                checkOutTime:
+                  type: string
+                  description: Hora limite para check-out
+                cancellationPolicy:
+                  type: string
+                  description: Política de cancelamento detalhada
+                paymentPolicy:
+                  type: string
+                  description: Política de pagamento detalhada
+      responses:
+        200:
+          description: Políticas atualizadas com sucesso
+    
+
+
+  # =============================================================
+  # REPORTS
+  # =============================================================
+
+  /reports/occupancy:
+    get:
+      tags: [Reports]
+      summary: Obter relatório de ocupação do hotel
+      responses:
+        200:
+          description: Dados do relatório retornados com sucesso
+
+  /reports/financial:
+    get:
+      tags: [Reports]
+      summary: Obter relatório financeiro (faturação)
+      responses:
+        200:
+          description: Dados financeiros retornados com sucesso
+
+
+  # =============================================================
+  # TICKETS (Suporte, Alterações de Reserva & Chat Interno)
+  # =============================================================
+
+  /public/tickets:
+    post:
+      tags: [Tickets]
+      summary: Abrir novo ticket de suporte (Cliente ou Admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, message]
+              properties:
+                subject:
+                  type: string
+                  example: "Solicitação de alteração de datas"
+                message:
+                  type: string
+                  example: "Gostaria de adiar o meu check-in por motivos de força maior."
+                type:
+                  type: string
+                  enum: [COMPLAINT, ALTERATION, MAINTENANCE]
+                  default: COMPLAINT
+                  example: "ALTERATION"
+                reservationId:
+                  type: string
+                  format: uuid
+                  example: "a6b12345-e89b-12d3-a456-426614174000"
+                requestedCheckIn:
+                  type: string
+                  format: date-time
+                  example: "2026-06-15T14:00:00Z"
+                requestedCheckOut:
+                  type: string
+                  format: date-time
+                  example: "2026-06-20T12:00:00Z"
+                requestedRoomId:
+                  type: string
+                  format: uuid
+                  example: "b7c98765-e89b-12d3-a456-426614174001"
+    responses:
+      201:
+        description: Ticket criado com sucesso.
+      400:
+        description: Dados inválidos ou sem permissão para a reserva associada.
+
+    get:
+      tags: [Tickets]
+      summary: Listar os meus tickets (Visão do Cliente)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [OPEN, IN_PROGRESS, RESOLVED, CLOSED]
+          description: Filtrar por estado do ticket
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [COMPLAINT, ALTERATION, MAINTENANCE]
+          description: Filtrar por tipo de ticket
+      responses:
+        200:
+          description: Lista de tickets do utilizador retornada com sucesso.
+
+  /public/tickets/{id}:
+    get:
+      tags: [Tickets]
+      summary: Obter detalhes de um ticket específico
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID do ticket
+      responses:
+        200:
+          description: Dados detalhados do ticket retornados com sucesso.
+        400:
+          description: Ticket não encontrado ou acesso negado.
+
+  /public/tickets/{id}/mensagens:
+    get:
+      tags: [Tickets]
+      summary: Listar histórico de mensagens (chat) de um ticket
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID do ticket
+      responses:
+        200:
+          description: Histórico de mensagens retornado em ordem cronológica.
+
+    post:
+      tags: [Tickets]
+      summary: Enviar uma nova mensagem/resposta dentro do ticket
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID do ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                  example: "Olá, anexei o documento correto. Aguardo a vossa validação."
+      responses:
+        200:
+          description: Mensagem adicionada com sucesso.
+
+  # ─────────────────────────────────────────────────────────────
+  # ROTAS ADMINISTRATIVAS DE TICKETS
+  # ─────────────────────────────────────────────────────────────
+
+  /public/tickets/admin:
+    get:
+      tags: [Tickets - Admin]
+      summary: Listar todos os tickets do hotel (Backoffice)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: type
+          schema:
+            type: string
+      responses:
+        200:
+          description: Lista global de tickets gerada com sucesso.
+
+  /public/tickets/admin/{id}:
+    patch:
+      tags: [Tickets - Admin]
+      summary: Atualizar status, responder ou aprovar alterações de reserva
+      description: Se o status mudar para 'RESOLVED' em um ticket de 'ALTERATION', a reserva atualiza automaticamente.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [OPEN, IN_PROGRESS, RESOLVED, CLOSED]
+                  example: "RESOLVED"
+                response:
+                  type: string
+                  example: "A sua alteração de estadia foi confirmada e aplicada no nosso sistema."
+                assignedToId:
+                  type: string
+                  description: ID do funcionário responsável pelo atendimento.
+      responses:
+        200:
+          description: Ticket updated com sucesso.
+
+  /public/tickets/admin/stats:
+    get:
+      tags: [Tickets - Admin]
+      summary: Obter métricas quantitativas de tickets por status
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Contagem agrupada retornada com sucesso para monitorização do Dashboard.
+  
+
+
+ 

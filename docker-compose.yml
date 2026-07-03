@@ -1,0 +1,60 @@
+services:
+  # 1. BANCO DE DADOS (PostgreSQL)
+  database:
+    image: postgres:15-alpine
+    container_name: pedro_database_container
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=hotel_booking
+    ports:
+      - "5432:5432" # Permite conectar ao banco usando ferramentas externas (DBeaver, pgAdmin)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+     
+    networks:
+      - rede-projeto
+
+  # 2. BACKEND (Node.js API)
+  backend-app:
+    build: ./hotel-booking-api
+    container_name: pedro_backend_container
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./hotel-booking-api/src/uploads:/app/dist/uploads
+    environment:
+      - NODE_ENV=production
+      # Dentro do Docker, o host do banco passa a ser o nome do serviço 'database'
+      - DATABASE_URL=postgresql://postgres:1234@database:5432/hotel_booking?schema=public
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=2h
+      - EMAIL_USER=pedrojosecavudissaao@gmail.com
+      - EMAIL_PASS=rexh yjoi kswb ykaj
+      - FRONTEND_URL=http://localhost:9091 
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${VITE_GOOGLE_CLIENT_SECRET}
+    depends_on:
+      - database # Garante que o banco inicia antes do backend
+    networks:
+      - rede-projeto
+
+  # 3. FRONTEND
+  frontend-app:
+    build: ./hotel-pms
+    container_name: pedro_frontend_container
+    ports:
+      - "9091:80" # CORRIGIDO: Mapeia a porta 9091 da sua máquina para a porta 80 interna do Nginx
+    depends_on:
+      - backend-app
+    networks:
+      - rede-projeto
+
+# Garante que os dados do banco não desapareçam quando desligar os containers
+volumes:
+  postgres_data:
+
+networks:
+  rede-projeto:
+    driver: bridge
