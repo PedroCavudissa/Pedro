@@ -32,7 +32,7 @@ services:
       - JWT_EXPIRES_IN=2h
       - EMAIL_USER=pedrojosecavudissaao@gmail.com
       - EMAIL_PASS=rexh yjoi kswb ykaj
-      - FRONTEND_URL=http://localhost:9091 
+      - FRONTEND_URL=http://10.0.0.4:9091 
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${VITE_GOOGLE_CLIENT_SECRET}
     depends_on:
