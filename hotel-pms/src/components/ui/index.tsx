@@ -79,7 +79,7 @@ export function LazyImage({ src, alt, className, fallback }: LazyImageProps) {
     return () => obs.disconnect()
   }, [])
 
-  const imgSrc = src?.startsWith('http') ? src : src ? `http://localhost:9090/uploads/${src}` : undefined
+  const imgSrc = src?.startsWith('http') ? src : src ? `http://10.10.0.4:9090/uploads/${src}` : undefined
 
   return (
     <div ref={ref} className={cn('overflow-hidden bg-stone-100', className)}>

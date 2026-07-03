@@ -9,7 +9,7 @@ static async create(req: Request, res: Response) {
   try {
 
     const imageUrl = req.file
-      ? `http://localhost:9090/uploads/${req.file.filename}`
+      ? `http://10.10.0.4:9090/uploads/${req.file.filename}`
       : null;
 
     const room = await RoomService.create({
