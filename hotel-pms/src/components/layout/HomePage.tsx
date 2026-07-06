@@ -106,7 +106,7 @@ const getValidImageUrl = (room: Room) => {
     if (room.imageUrl.startsWith('http')) {
       return room.imageUrl;
     }
-    const API_URL = import.meta.env.VITE_API_URL || 'http://10.10.0.4:9090';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://10.0.0.4:9090';
     return `${API_URL}/uploads/${room.imageUrl}`;
   }
   return `https://placehold.co/600x400/001E3D/white?text=Quarto+${room.number}`;

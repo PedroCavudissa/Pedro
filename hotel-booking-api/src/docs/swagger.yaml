@@ -6,7 +6,7 @@ info:
   description: API de gestão de reservas de hotel (Pedro Cavudissa)
 
 servers:
-  - url: http://10.10.0.4:9090
+  - url: http://10.0.0.4:9090
 
 tags:
   - name: Authentication

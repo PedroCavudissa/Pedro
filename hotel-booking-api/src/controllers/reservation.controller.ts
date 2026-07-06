@@ -146,7 +146,7 @@ export class ReservationController {
         return res.status(400).json({ error: "Arquivo nao enviado" });
       }
 
-      const fileUrl = `http://10.10.0.4:9090/uploads/${req.file.filename}`;
+      const fileUrl = `http://10.0.0.4:9090/uploads/${req.file.filename}`;
       const id = req.params.id as string;
       const result = await ReservationService.uploadPaymentProof(id, fileUrl);
       return res.json(result);

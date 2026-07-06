@@ -81,7 +81,7 @@ export default function VerifyEmailPage() {
 
       setTimeout(() => {
         navigate('/auth/login')
-      }, 2000)
+      }, 5000)
     } catch (err: any) {
       const message = err.response?.data?.message || 'Código inválido ou expirado'
       setError(message)

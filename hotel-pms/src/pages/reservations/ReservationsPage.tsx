@@ -1280,7 +1280,7 @@ export default function ReservationsPage() {
         setRoomAvailable(null)
         setAvailabilitySuggestion(null)
       }
-    }, 500)
+    }, 5000)
     return () => clearTimeout(timer)
   }, [form.roomId, form.checkIn, form.checkOut])
 

@@ -13,7 +13,7 @@ export class EmailService {
 
   static async sendVerificationEmail(email: string, token: string) {
     // ✅ URL APONTA DIRETAMENTE PARA O BACKEND
-    const baseUrls = process.env.API_URL || 'http://10.10.0.4:9090';
+    const baseUrls = process.env.API_URL || 'http://10.0.0.4:9090';
     const verificationUrl = `${baseUrls}/auth/verify-email?token=${token}`;
 
     await this.transporter.sendMail({

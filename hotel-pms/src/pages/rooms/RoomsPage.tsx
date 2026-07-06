@@ -72,7 +72,7 @@ export default function RoomsPage() {
 
   const { data: amenities = [] } = useQuery({
     queryKey: ['amenities'],
-    queryFn: () => fetch('http://10.10.0.4:9090/amenities', {
+    queryFn: () => fetch('http://10.0.0.4:9090/amenities', {
       headers: { 'Authorization': `Bearer ${token}` }
     }).then(r => r.json())
   })
@@ -100,7 +100,7 @@ export default function RoomsPage() {
       if (imageFile) formData.append('image', imageFile)
       selectedAmenities.forEach(id => formData.append('amenityIds[]', id))
 
-      const response = await fetch('http://10.10.0.4:9090/rooms', {
+      const response = await fetch('http://10.0.0.4:9090/rooms', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
