@@ -85,7 +85,7 @@ export default function LoginPage() {
     } catch (err: any) {
       console.error('Erro no login Google:', err)
       const message = err.response?.data?.message || err.response?.data?.error || err.message || 'Erro ao autenticar com Google'
-      toast.error(message)
+     // toast.error(message)
     } finally {
       setGoogleLoading(false)
     }
@@ -401,7 +401,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Botão do Google */}
+          {/* Botão do Google 
           <div 
             ref={googleButtonRef} 
             className="w-full"
@@ -413,7 +413,7 @@ export default function LoginPage() {
               <Spinner size={18} className="text-[#001E3D] animate-spin" />
               <span>Autenticando com Google...</span>
             </div>
-          )}
+          )}*/}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

@@ -21,7 +21,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(cors({
-  origin: "http://localhost:9091",
+  origin: "http://10.0.0.4:9091",
   credentials: true
 }));
 app.use(securityHeaders);

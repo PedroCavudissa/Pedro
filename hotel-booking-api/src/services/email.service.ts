@@ -70,7 +70,7 @@ export class EmailService {
   }
   // 2. Enviar link para Recuperação de Senha (Forgot Password)
   static async sendResetPasswordEmail(email: string, token: string) {
-    const baseUrl =  'http://localhost:5173';
+    const baseUrl =  'http://10.0.0.4:9091';
     const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
     await this.transporter.sendMail({
