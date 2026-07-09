@@ -20,10 +20,16 @@ app.use((req, res, next) => {
   console.log("Requisição recebida:", req.method, req.originalUrl);
   next();
 });
+
+// Configuração que aceita QUALQUER origem mantendo o suporte a credenciais (cookies/tokens)
 app.use(cors({
-  origin: "http://10.0.0.4:9091",
+  origin: (origin, callback) => {
+    // Permite qualquer origem (ou requisições sem origem, como Postman/Mobile)
+    callback(null, true);
+  },
   credentials: true
 }));
+
 app.use(securityHeaders);
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
@@ -40,6 +46,7 @@ app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/rooms", roomRoutes);
 app.use("/amenities", amenityRoutes);
+
 import { fileURLToPath } from "url";
 import fs from "fs";
 
@@ -60,4 +67,5 @@ app.use("/integrations", integrationRoutes);
 app.get("/", (req, res) => {
   res.send("Hotel Booking API Running ");
 });
+
 export default app;
