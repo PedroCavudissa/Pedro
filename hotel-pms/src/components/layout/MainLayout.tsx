@@ -45,44 +45,56 @@ export default function MainLayout() {
             : "bg-white py-5"
         }`}
       >
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-1.5">
+            <span className="text-2xl font-serif font-black text-[#001E3D]">PEDRO</span>
+            <span className="text-2xl font-serif font-light text-amber-500">HOTEL</span>
+          </Link>
 
-<div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-  {/* Logo */}
-  <Link to="/" className="flex items-center gap-1.5">
-    <span className="text-2xl font-serif font-black text-[#001E3D]">PEDRO</span>
-    <span className="text-2xl font-serif font-light text-amber-500">HOTEL</span>
-  </Link>
+          {/* Botão do Menu Hambúrguer - ADICIONADO AQUI */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+            aria-label="Abrir menu"
+          >
+            {isMenuOpen ? (
+              <X size={24} className="text-slate-700" />
+            ) : (
+              <Menu size={24} className="text-slate-700" />
+            )}
+          </button>
 
- 
-  <div className="hidden md:flex items-center bg-slate-100 p-1.5 rounded-full border border-slate-200/60 gap-2">
-    {navLinks.map((link) => {
-      const isActive = location.pathname === link.to;
-      return (
-        <Link
-          key={link.to}
-          to={link.to}
-          className={`text-xs font-semibold px-4 py-2 rounded-full uppercase tracking-wider transition-all ${
-            isActive ? "bg-white text-amber-600 shadow-sm" : "text-slate-600 hover:text-slate-900"
-          }`}
-        >
-          {link.label}
-        </Link>
-      );
-    })}
-    
-    <div className="h-4 w-[1px] bg-slate-300 mx-1" />
+          {/* Menu Desktop */}
+          <div className="hidden md:flex items-center bg-slate-100 p-1.5 rounded-full border border-slate-200/60 gap-2">
+            {navLinks.map((link) => {
+              const isActive = location.pathname === link.to;
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`text-xs font-semibold px-4 py-2 rounded-full uppercase tracking-wider transition-all ${
+                    isActive ? "bg-white text-amber-600 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+            
+            <div className="h-4 w-[1px] bg-slate-300 mx-1" />
 
-    {user ? (
-      <button onClick={handleLogout} className="text-xs font-bold text-red-600 px-4 py-2 uppercase">
-        Sair
-      </button>
-    ) : (
-      <Link to="/auth/login" className="text-xs font-bold bg-[#001E3D] text-white px-4 py-2 rounded-full uppercase">
-        Entrar
-      </Link>
-    )}
-  </div>
-</div>
+            {user ? (
+              <button onClick={handleLogout} className="text-xs font-bold text-red-600 px-4 py-2 uppercase">
+                Sair
+              </button>
+            ) : (
+              <Link to="/auth/login" className="text-xs font-bold bg-[#001E3D] text-white px-4 py-2 rounded-full uppercase">
+                Entrar
+              </Link>
+            )}
+          </div>
+        </div>
       </header>
 
       {/* Mobile Navigation Drawer (Slide-Over Elegante) */}
